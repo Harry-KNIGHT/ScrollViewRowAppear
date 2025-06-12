@@ -25,7 +25,7 @@ struct ContentView: View {
                             key: VisibleItemsPreference.self,
                             value: .bounds,
                             transform: { anchor in
-                                [.init(item: num, bounds: anchor)]
+                                [Payload(item: num, bounds: anchor)]
                         })
                         
                     
@@ -34,23 +34,21 @@ struct ContentView: View {
         }
         .overlayPreferenceValue(VisibleItemsPreference.self, { value in
             GeometryReader { proxy in
-                        let myFrame = proxy.frame(in: .local)
-                        let arr = value.sorted(by: { $0.item.number < $1.item.number }).map { item in
-                            let inBounds = myFrame.intersects(proxy[item.bounds])
-                            return (inBounds: inBounds, item: item.item)
-                        }
-                        let texts: [Text] = arr.map { (inBounds: Bool, item: Item) in
-                            Text("\(item.number)")
-                                .foregroundStyle(inBounds ? .primary : .secondary)
-                        }
-                        texts.joined(separator: Text(","))
-                            .foregroundStyle(.white)
-                            .background(.black)
-                            .frame(maxHeight: .infinity)
-                    }
-                })
-        
-        
+                let myFrame = proxy.frame(in: .local)
+                let arr = value.sorted(by: { $0.item.number < $1.item.number }).map { item in
+                    let inBounds = myFrame.intersects(proxy[item.bounds])
+                    return (inBounds: inBounds, item: item.item)
+                }
+                let texts: [Text] = arr.map { (inBounds: Bool, item: Item) in
+                    Text("\(item.number)")
+                        .foregroundStyle(inBounds ? .primary : .secondary)
+                }
+                texts.joined(separator: Text(","))
+                    .foregroundStyle(.white)
+                    .background(.black)
+                    .frame(maxHeight: .infinity)
+            }
+        })
     }
 }
 
