@@ -7,26 +7,31 @@ struct ContentView: View {
     var body: some View {
         
         ScrollView {
-            LazyVStack {
+            LazyVStack(spacing: 100) {
                 ForEach(sampleItems) { num in
                     Text("number: \(num.name)")
                         .padding()
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: UIScreen.main.bounds.width / 2)
                         .background(Color.blue)
                         .padding(.horizontal)
+                        .scaleEffect(visibles.contains(num) ? 1 : 0)
+                        .animation(.spring(duration: 0.85, bounce: 0.35), value: visibles.contains(num))
                         .anchorPreference(
                             key: VisibleItemsPreference.self,
                             value: .bounds,
                             transform: { anchor in
                                 [Payload(item: num, bounds: anchor)]
-                        })
+                            })
+                        .onAppear {
+                            visibles.append(num)
+                        }
                         
                     
                 }
             }
         }
         .onChange(of: visibles, { _, newValue in
-            print( newValue)
+            print(newValue.map(\.name))
         })
         .backgroundPreferenceValue(VisibleItemsPreference.self) { preferences in
             GeometryReader { proxy in
@@ -40,19 +45,15 @@ struct ContentView: View {
                                 return frame.intersects(rect)
                             }
                             .map { $0.item }
-                        DispatchQueue.main.async {
-                            visibles = visibleItems
+
+                        visibleItems.forEach { item in
+                            if !visibles.contains(item) {
+                                visibles.append(item)
+                            }
                         }
                     }
             }
         }
-    }
-}
-
-extension [Text] {
-    func joined(separator: Text) -> Text {
-        guard let f = first else { return Text("") }
-        return dropFirst().reduce(f, { $0 + separator + $1 })
     }
 }
 
