@@ -1,14 +1,7 @@
-//
-//  ContentView.swift
-//  ScrollViewRowAppearPOC
-//
-//  Created by Elliot Knight on 11/06/2025.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    @State private var visibles: [Int] = []
+    @State private var visibles: [Item] = []
     let sampleItems = (0..<100).map { Item(number: $0) }
     
     var body: some View {
@@ -32,23 +25,27 @@ struct ContentView: View {
                 }
             }
         }
-        .overlayPreferenceValue(VisibleItemsPreference.self, { value in
-            GeometryReader { proxy in
-                let myFrame = proxy.frame(in: .local)
-                let arr = value.sorted(by: { $0.item.number < $1.item.number }).map { item in
-                    let inBounds = myFrame.intersects(proxy[item.bounds])
-                    return (inBounds: inBounds, item: item.item)
-                }
-                let texts: [Text] = arr.map { (inBounds: Bool, item: Item) in
-                    Text("\(item.number)")
-                        .foregroundStyle(inBounds ? .primary : .secondary)
-                }
-                texts.joined(separator: Text(","))
-                    .foregroundStyle(.white)
-                    .background(.black)
-                    .frame(maxHeight: .infinity)
-            }
+        .onChange(of: visibles, { _, newValue in
+            print( newValue)
         })
+        .backgroundPreferenceValue(VisibleItemsPreference.self) { preferences in
+            GeometryReader { proxy in
+                Color.clear
+                    .onChange(of: preferences) { _, value in
+                        let frame = proxy.frame(in: .local)
+                        let visibleItems = value
+                            .sorted { $0.item.number < $1.item.number }
+                            .filter { payload in
+                                let rect = proxy[payload.bounds]
+                                return frame.intersects(rect)
+                            }
+                            .map { $0.item }
+                        DispatchQueue.main.async {
+                            visibles = visibleItems
+                        }
+                    }
+            }
+        }
     }
 }
 
@@ -72,7 +69,7 @@ struct Item: Identifiable, Hashable {
     }
 }
 
-struct Payload {
+struct Payload: Equatable {
     var item: Item
     var bounds: Anchor<CGRect>
 }
